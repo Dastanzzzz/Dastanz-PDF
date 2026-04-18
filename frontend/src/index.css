@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --color-border: hsl(214.3 31.8% 91.4%);
+  --color-input: hsl(214.3 31.8% 91.4%);
+  --color-ring: hsl(221.2 83.2% 53.3%);
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(222.2 84% 4.9%);
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  height: 100%;
+}
+
+#root {
+  height: 100%;
+}
+
+.fluid-editor {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 12pt;
+  line-height: 1.35;
+  color: #000;
+}
+
+.fluid-editor h1,
+.fluid-editor h2,
+.fluid-editor h3,
+.fluid-editor h4,
+.fluid-editor h5,
+.fluid-editor h6 {
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+
+.fluid-editor h1 { font-size: 16pt; }
+.fluid-editor h2 { font-size: 14pt; }
+.fluid-editor h3 { font-size: 12pt; }
+
+.fluid-editor p { margin: 0 0 8px; }
+
+.fluid-editor ul,
+.fluid-editor ol {
+  margin: 0 0 8px 20px;
+  padding: 0;
+}
+
+.fluid-editor li { margin: 0; }
+
+.fluid-editor a {
+  color: #0b61d8;
+  text-decoration: underline;
+}
+
+.fluid-editor .pdf-page-content {
+  box-sizing: border-box;
+  margin: 0 auto 32px auto;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  background-color: white;
+  border: 1px solid #e2e8f0;
+
+}
+.fluid-editor .pdf-page-content:last-child {
+  margin-bottom: 0;
+}
