@@ -41,6 +41,8 @@ This project consists of two monolithic services orchestrated through a monorepo
 - **Stateless Backend**: Currently, document operations assume small-to-medium digital PDFs and store temporary instances of the document in the backend `/tmp` directory associated with a unique document ID.
 - **Scanned Documents**: v1 targets *digital-first* PDFs to read textual content seamlessly. A Tesseract OCR fallback is provided, but non-digital documents might have degraded AI-rewrite experiences compared to native digital text.
 
+<img width="1910" height="924" alt="{2267A03F-0BD7-4639-A28F-F3ECC4C3B959}" src="https://github.com/user-attachments/assets/55da6ea5-0731-43c8-8994-6fef7c6d3b36" />
+
 ## Setup & Configuration
 
 ### Prerequisites
