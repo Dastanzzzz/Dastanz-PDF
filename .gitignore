@@ -2,9 +2,4 @@
 .vscode/
 .idea/
 *.log
-__pycache__/
-pyvenv/
-.venv/
-venv/
-env/
 

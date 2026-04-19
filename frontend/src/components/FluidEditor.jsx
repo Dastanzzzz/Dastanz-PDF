@@ -9,7 +9,6 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 export default function FluidEditor({ content, onChange, onExport, file }) {
   const editorRef = useRef(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [showFontSizeMenu, setShowFontSizeMenu] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [zoom, setZoom] = useState(120);
@@ -24,9 +23,6 @@ export default function FluidEditor({ content, onChange, onExport, file }) {
   const [pageSize, setPageSize] = useState({ width: 595, height: 842 });
   const pageWidth = pageSize.width;
   const pageHeight = pageSize.height;
-  const pagePadding = 0;
-  const pageGap = 0;
-  const columnWidth = pageWidth - pagePadding * 2;
   const zoomScale = zoom / 100;
 
   useEffect(() => {
@@ -130,8 +126,8 @@ export default function FluidEditor({ content, onChange, onExport, file }) {
       try {
         selection.removeAllRanges();
         selection.addRange(selectionRef.current.cloneRange());
-      } catch (e) {
-        console.log('Could not restore selection');
+      } catch {
+        // Ignored
       }
     }
   };
@@ -155,7 +151,7 @@ export default function FluidEditor({ content, onChange, onExport, file }) {
       try {
         const range = selection.getRangeAt(0);
         range.surroundContents(span);
-      } catch (e) {
+      } catch {
         const range = selection.getRangeAt(0);
         span.appendChild(range.extractContents());
         range.insertNode(span);
@@ -329,8 +325,8 @@ export default function FluidEditor({ content, onChange, onExport, file }) {
             contentEditable
             suppressContentEditableWarning
             onInput={handleInput}
-            onFocus={() => setIsEditing(true)}
-            onBlur={() => { setIsEditing(false); saveSelection(); }}
+            onFocus={() => {}}
+            onBlur={() => { saveSelection(); }}
             onMouseUp={() => saveSelection()}
             onKeyUp={() => saveSelection()}
             style={{

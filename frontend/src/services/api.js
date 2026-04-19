@@ -7,9 +7,7 @@ const api = axios.create({
 export const uploadPdf = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
-  const response = await api.post('/pdf/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const response = await api.post('/pdf/upload', formData);
   return response.data;
 };
 
@@ -22,13 +20,15 @@ export const rewriteText = async (originalText, instruction) => {
 };
 
 export const exportEditedPdf = async (documentId, edits) => {
-  const response = await api.post('/pdf/export', {
-    documentId,
-    edits
-  }, {
-    responseType: 'blob'
+  const response = await fetch('http://localhost:8080/api/pdf/export', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ documentId, edits })
   });
-  return response.data;
+  if (!response.ok) throw new Error('Export failed');
+  return await response.blob();
 };
 
 export const getFluidText = async (documentId) => {
@@ -45,10 +45,13 @@ export const getFluidText = async (documentId) => {
 };
 
 export const exportFluidPdf = async (htmlContent) => {
-  const response = await api.post('/fluid/export', {
-    htmlContent
-  }, {
-    responseType: 'blob'
+  const response = await fetch('http://localhost:8080/api/fluid/export', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ htmlContent })
   });
-  return response.data;
+  if (!response.ok) throw new Error('Export failed');
+  return await response.blob();
 };

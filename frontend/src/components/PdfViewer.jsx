@@ -9,7 +9,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url,
 ).toString();
 
-export default function PdfViewer({ file, textBlocks, appliedEdits, onSelectBlock }) {
+export default function PdfViewer({ file, textBlocks, appliedEdits, onSelectBlock, toolState }) {
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.2);
@@ -94,7 +94,24 @@ export default function PdfViewer({ file, textBlocks, appliedEdits, onSelectBloc
                    </div>
                  )
                })}
+               
              </div>
+             
+             {/* Signature / Tool Overlay */}
+             {toolState?.type === 'sign' && toolState.page === pageNumber && (
+               <img 
+                 src={toolState.url} 
+                 alt="Signature Preview"
+                 className="absolute pointer-events-none drop-shadow-lg opacity-80"
+                 style={{
+                   left: `${toolState.x}%`,
+                   top: `${toolState.y}%`,
+                   transform: `scale(${toolState.scale})`,
+                   transformOrigin: 'top left',
+                 }} 
+               />
+             )}
+             
            </div>
         </Document>
       </div>

@@ -5,7 +5,8 @@ import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
 import PdfViewer from './components/PdfViewer';
 import FluidEditor from './components/FluidEditor';
-import { uploadPdf, exportEditedPdf, getFluidText } from './services/api';
+import ToolPanel from './components/ToolPanel';
+import { uploadPdf, getFluidText } from './services/api';
 
 function App() {
   const [fileUrl, setFileUrl] = useState(null);
@@ -17,7 +18,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState('fixed'); // 'fixed' or 'fluid'
   const [fluidContent, setFluidContent] = useState('');
-  const [exporting, setExporting] = useState(false);
+  const [selectedTool, setSelectedTool] = useState(null);
+  const [toolState, setToolState] = useState(null); // Used to pass visual overlay state to PdfViewer
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -86,7 +88,6 @@ function App() {
       return;
     }
 
-    setExporting(true);
     try {
       // Create a temporary container off-screen
       const tempDiv = document.createElement('div');
@@ -154,30 +155,6 @@ function App() {
     } catch (error) {
       console.error('Export error:', error);
       alert('Failed to export PDF: ' + error.message);
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const handleExport = async () => {
-    if (!documentId) return;
-    try {
-      if (editMode === 'fluid') {
-        // Handled by FluidEditor's onExport callback
-        return;
-      } else {
-        const blob = await exportEditedPdf(documentId, appliedEdits);
-        const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = "edited-document.pdf";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      }
-    } catch (e) {
-      console.error(e);
-      alert('Export failed.');
     }
   };
 
@@ -185,9 +162,10 @@ function App() {
     <div className="flex h-screen w-full bg-slate-100 overflow-hidden font-sans">
       <Sidebar 
         documentId={documentId} 
-        handleExport={handleExport} 
         editMode={editMode}
         onModeChange={handleModeChange}
+        selectedTool={selectedTool}
+        onToolSelect={setSelectedTool}
       />
       
       <main className="flex-1 flex flex-col relative h-full">
@@ -211,6 +189,7 @@ function App() {
             textBlocks={textBlocks} 
             appliedEdits={appliedEdits}
             onSelectBlock={setSelectedBlock}
+            toolState={toolState}
           />
         ) : (
           <FluidEditor 
@@ -222,13 +201,21 @@ function App() {
         )}
       </main>
 
-      {editMode === 'fixed' && (
+      {selectedTool ? (
+        <ToolPanel
+          tool={selectedTool}
+          documentId={documentId}
+          onClose={() => setSelectedTool(null)}
+          toolState={toolState}
+          setToolState={setToolState}
+        />
+      ) : editMode === 'fixed' ? (
         <RightPanel 
           selectedBlock={selectedBlock} 
           handleApplyEdit={handleApplyEdit}
           handleCancelEdit={() => setSelectedBlock(null)}
         />
-      )}
+      ) : null}
     </div>
   );
 }

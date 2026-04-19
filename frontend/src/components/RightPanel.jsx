@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Sparkles, Wand2, Check, X } from 'lucide-react';
 import { rewriteText } from '../services/api';
 
-export default function RightPanel({ selectedBlock, handleApplyEdit, handleCancelEdit }) {
+export default function RightPanel({ selectedBlock, handleApplyEdit }) {
   const [instruction, setInstruction] = useState('');
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);

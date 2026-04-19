@@ -39,4 +39,12 @@ public class DocumentService {
         }
         return file;
     }
+
+    public Path getDocumentPath(String documentId) throws IOException {
+        Path path = tempDir.resolve(documentId + ".pdf");
+        if (!Files.exists(path)) {
+            throw new IOException("Document not found: " + documentId);
+        }
+        return path;
+    }
 }
