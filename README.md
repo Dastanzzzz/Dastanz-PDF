@@ -69,7 +69,7 @@ set GEMINI_API_KEY=your_key_here
 export GEMINI_API_KEY=your_key_here
 ```
 
-**Note:** If you do not have a Gemini API key, you can use a dummy key (e.g., `set GEMINI_API_KEY="dummy_key_for_testing"`). The application will still run and allow you to use standard PDF tools (like Sign, OCR, Split, Merge, Compress, etc.), but the AI-powered text rewriting features will fail gracefully.
+**Note:** If you do not have a Gemini API key, you can use a dummy key (e.g., run `$env:GEMINI_API_KEY="dummy_key_for_testing"` in PowerShell). The application will still run and allow you to use standard PDF tools (like Sign, OCR, Split, Merge, Compress, etc.), but the AI-powered text rewriting features will fail gracefully.
 
 ### 2. Start the Backend
 ```bash

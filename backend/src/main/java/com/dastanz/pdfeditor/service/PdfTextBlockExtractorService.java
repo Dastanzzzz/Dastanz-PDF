@@ -62,6 +62,43 @@ public class PdfTextBlockExtractorService {
             float fontSize = first.getFontSizeInPt();
             String fontFamily = first.getFont().getName();
 
+            // Try to merge with the previous block to form a paragraph
+            if (!blocks.isEmpty()) {
+                PageTextBlock lastBlock = blocks.get(blocks.size() - 1);
+                
+                float lastBlockBottom = lastBlock.getY() + lastBlock.getHeight();
+                float lastBlockRight = lastBlock.getX() + lastBlock.getWidth();
+                
+                boolean samePage = lastBlock.getPageNumber() == currentPage;
+                // Kita tidak lagi mewajibkan fontFamily sama persis, agar teks tebal/miring (Bold/Italic) tetap menyatu ke paragraf.
+                boolean similarFont = Math.abs(lastBlock.getFontSize() - fontSize) < 3.0f;
+
+                // Memastikan teks tersebut ada di baris yang sama secara vertikal, atau baris langsung di bawahnya (paragraf yang sama)
+                boolean closeVertically = y >= (lastBlock.getY() - height * 1.0f) && y <= (lastBlockBottom + height * 1.5f);
+                
+                // Memastikan teks tersebut mengikuti indentasi dari tulisan sebelumnya (baris baru), atau sekadar sambungan teks.
+                boolean leftAligned = Math.abs(lastBlock.getX() - x) < (fontSize * 15.0f);
+                boolean inlineContinuation = x <= (lastBlockRight + fontSize * 5.0f);
+                
+                boolean closeHorizontally = leftAligned || inlineContinuation;
+
+                if (samePage && similarFont && closeVertically && closeHorizontally) {
+                    // Update bounding box encompassing both lines
+                    float newX = Math.min(lastBlock.getX(), x);
+                    float newY = Math.min(lastBlock.getY(), y);
+                    float newMaxX = Math.max(lastBlock.getX() + lastBlock.getWidth(), x + width);
+                    float newMaxY = Math.max(lastBlockBottom, y + height);
+                    
+                    // Merge text and dimensions
+                    lastBlock.setText(lastBlock.getText() + " " + text.trim());
+                    lastBlock.setX(newX);
+                    lastBlock.setY(newY);
+                    lastBlock.setWidth(newMaxX - newX);
+                    lastBlock.setHeight(newMaxY - newY);
+                    return; // Merged successfully, stop processing
+                }
+            }
+
             PageTextBlock block = new PageTextBlock(
                 blockIdCounter++,
                 currentPage,
