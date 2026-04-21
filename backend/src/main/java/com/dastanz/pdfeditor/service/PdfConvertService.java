@@ -3,6 +3,11 @@ package com.dastanz.pdfeditor.service;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.poi.xwpf.usermodel.BreakType;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -49,6 +54,48 @@ public class PdfConvertService {
             }
 
             return zipBytes.toByteArray();
+        }
+    }
+
+    /**
+     * Convert a PDF document into a DOCX file by extracting text page-by-page.
+     * This is a conservative text-focused conversion (not full visual layout fidelity).
+     */
+    public byte[] convertToWord(File pdfFile) throws IOException {
+        try (PDDocument pdfDocument = PDDocument.load(pdfFile);
+             XWPFDocument wordDocument = new XWPFDocument();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            PDFTextStripper stripper = new PDFTextStripper();
+            int totalPages = pdfDocument.getNumberOfPages();
+
+            for (int page = 1; page <= totalPages; page++) {
+                stripper.setStartPage(page);
+                stripper.setEndPage(page);
+
+                String pageText = stripper.getText(pdfDocument);
+                String normalizedText = pageText == null ? "" : pageText.replace("\r\n", "\n").replace("\r", "\n");
+                String[] lines = normalizedText.split("\n", -1);
+
+                if (lines.length == 0) {
+                    wordDocument.createParagraph();
+                } else {
+                    for (String line : lines) {
+                        XWPFParagraph paragraph = wordDocument.createParagraph();
+                        XWPFRun run = paragraph.createRun();
+                        run.setText(line);
+                    }
+                }
+
+                if (page < totalPages) {
+                    XWPFParagraph pageBreakParagraph = wordDocument.createParagraph();
+                    XWPFRun pageBreakRun = pageBreakParagraph.createRun();
+                    pageBreakRun.addBreak(BreakType.PAGE);
+                }
+            }
+
+            wordDocument.write(out);
+            return out.toByteArray();
         }
     }
 

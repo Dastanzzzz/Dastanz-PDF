@@ -1,5 +1,7 @@
 package com.dastanz.pdfeditor.model;
 
+import java.util.List;
+
 public class EditOperation {
     private int blockId;
     private int pageNumber;
@@ -10,6 +12,9 @@ public class EditOperation {
     private float width;
     private float height;
     private float fontSize;
+
+    // v2+ Expansion: Rich Interaction Option
+    private List<Float> highlightPolygon; // Used to override simple rect bounds if present
 
     public EditOperation() {
     }
@@ -35,6 +40,7 @@ public class EditOperation {
     public float getWidth() { return width; }
     public float getHeight() { return height; }
     public float getFontSize() { return fontSize; }
+    public List<Float> getHighlightPolygon() { return highlightPolygon; }
 
     public void setBlockId(int blockId) { this.blockId = blockId; }
     public void setPageNumber(int pageNumber) { this.pageNumber = pageNumber; }
@@ -44,5 +50,6 @@ public class EditOperation {
     public void setY(float y) { this.y = y; }
     public void setWidth(float width) { this.width = width; }
     public void setHeight(float height) { this.height = height; }
+    public void setHighlightPolygon(List<Float> highlightPolygon) { this.highlightPolygon = highlightPolygon; }
     public void setFontSize(float fontSize) { this.fontSize = fontSize; }
 }

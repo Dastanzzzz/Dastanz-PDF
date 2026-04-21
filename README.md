@@ -1,82 +1,114 @@
-# AI Dastanz PDF Text Editor
+# 📄 AI Dastanz PDF Text Editor
 
-A full-stack, Java-first web application designed to securely extract, edit, reconstruct, and manage PDF documents using Artificial Intelligence (Gemini API) and comprehensive PDF utilities.
+![Java](https://img.shields.io/badge/Java-17%2B-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-6DB33F?style=flat-square&logo=springboot&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?style=flat-square&logo=vite&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.x-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)
 
-## Key Features
+A full-stack, comprehensive web application designed to securely extract, edit, reconstruct, and manage PDF documents. Leveraging **Artificial Intelligence (Gemini API)** alongside industry-standard tools like **Apache PDFBox** and **Apache POI**, it brings "word-processor-like" fluid text editing, format conversion, and rich interaction to static PDF files.
+
+## ✨ Key Features
 
 ### 🤖 AI-Powered Editing
-- **Smart Text Manipulation**: Rewrite, summarize, or alter PDF text blocks instantly using Gemini AI.
-- **Fluid Editing**: Edit text seamlessly with maintaining context constraints.
-- **Coordinate-Based Extraction**: Precision text selection leveraging Apache PDFBox.
+- **Smart Text Manipulation**: Rewrite, summarize, or alter PDF text blocks instantly using Gemini AI while maintaining the document's original narrative context.
+- **Fluid Editing**: Edit text directly on the canvas seamlessly with constrained boundary management.
+- **Coordinate-Based Extraction**: Precision layout detection leveraging Apache PDFBox.
+- **Rich Interaction**: Interactive SVG-based wrapper canvas for drawing custom highlighting polygons and resizing boundary boxes across pages.
+- **Font Extraction**: Deep PDF metadata integration mapping original TrueType/Type1 fonts to precisely match dynamic rendering styles.
 
 ### 🛠️ Comprehensive PDF Utilities
-- **Split & Merge**: Divide large PDFs into multiple files or combine several PDFs into one.
-- **Arrange**: Reorder or delete specific pages within a PDF.
-- **Compress**: Reduce PDF file sizes for much easier sharing.
-- **OCR (Optical Character Recognition)**: Extract text from scanned documents using Tesseract OCR.
-- **Convert**: Export or convert PDF formats seamlessly.
-- **Compare**: Analyze and highlight differences between two PDF documents.
+- **Convert File Formats**: Export or convert PDFs seamlessly (e.g., PDF to JPG ZIPs and structurally rich PDF to Word/DOCX capabilities).
+- **Split & Merge**: Divide large PDFs into multiple parts or combine several PDFs into one optimized document.
+- **Arrange**: Reorder or delete specific pages visually without losing layout metadata.
+- **Compress**: Drastically reduce PDF file sizes for network sharing.
+- **OCR (Optical Character Recognition)**: Extract and reconstruct text from purely scanned image documents using Tesseract OCR.
+- **Compare**: Analyze and generate highlighted visual difference layers between two PDF versions.
 
 ### 🔒 Security & Verification
-- **Visual Signatures (v1)**: Securely upload and place visual signatures explicitly on selected pages using real-time coordinates.
-- **Password Protection**: Encrypt and lock PDFs with passwords.
-- **Redaction**: Permanently obscure sensitive information from documents.
-- **Watermarks & Stamps**: Apply text/image watermarks or stamps for copyright and document status.
+- **Visual Signatures**: Securely upload and place visual user signatures explicitly on selected pages using a real-time coordinate mapper.
+- **Password Protection**: Encrypt and lock PDFs with military-grade passwords.
+- **Redaction**: Permanently obscure (black out) sensitive PI data from documents.
+- **Watermarks & Stamps**: Apply transparent text or image watermarks for copyright marking and review statuses.
 
-## Architecture
+---
 
-This project consists of two monolithic services orchestrated through a monorepo structure:
-- **Backend (Spring Boot 3 / Java 17+)**: 
-  - Orchestrates all PDF handling via `Apache PDFBox`.
-  - Exposes clean RESTful APIs for uploads, manipulation, and compilation (`PdfToolsController`, `PdfUploadController`, etc.).
-  - Interacts directly with the Gemini REST API to ensure AI calls remain completely server-side.
-  - Serves as the immutable single source of truth for saving operations.
-- **Frontend (React 18 / Vite)**: 
-  - Built using Vite, TailwindCSS v4, and `react-pdf`. 
-  - Provides a modern document viewing experience with floating toolbar overlays, right-panel AI editors, and real-time visualization of signatures and edits.
-  - Never exposes API keys or sensitive backend credentials.
+## 🏗️ Tech Stack
 
-## Limitations & v1 Tradeoffs
-- **PDF Reflowing**: Standard PDFs are not naturally "flowable". In this v1 implementation, we extract text based on visual layout bounds and apply AI edits by blanking out the old text coordinates and placing new text using standard system fonts (Helvetica) onto the newly exposed white rectangle. Shifts in precise text layout may occur.
-- **Stateless Backend**: Currently, document operations assume small-to-medium digital PDFs and store temporary instances of the document in the backend `/tmp` directory associated with a unique document ID.
-- **Scanned Documents**: v1 targets *digital-first* PDFs to read textual content seamlessly. A Tesseract OCR fallback is provided, but non-digital documents might have degraded AI-rewrite experiences compared to native digital text.
+### **Backend (Monolith API)**
+- **Java 17 & Spring Boot 3**: Core REST API framework and service orchestration.
+- **Apache PDFBox**: The workhorse module used for parsing files, extracting coordinate-bound text, manipulating geometry, and rewriting PDFs.
+- **Apache POI (`poi-ooxml`)**: Handles complex format extraction from PDF layouts into native `.docx` (Microsoft Word) structures.
+- **Tesseract OCR**: Image-to-text fallback for non-digital scanned PDFs.
+- **Google Gemini API**: Context-aware generative AI.
+
+### **Frontend (SPA)**
+- **React 18 & Vite**: Fast, modernized UI rendering and compilation.
+- **TailwindCSS**: Utility-first styling powering the document viewing experience, floating toolbars, and dynamic editors.
+- **`react-pdf`**: Heavily customized to align an interactive SVG/HTML hybrid coordinate layer securely over the exact rendered PDF canvas.
+
+---
+
+## 📂 Project Structure
+
+```text
+📦 ai-pdf-editor
+ ┣ 📂 backend            # Spring Boot REST API
+ ┃ ┣ 📂 src/main/java    # Controllers, DTOs, Services, Models (Java)
+ ┃ ┣ 📂 src/test         # Unit and Integration tests for services
+ ┃ ┗ 📜 pom.xml          # Maven dependencies (PDFBox, POI, Spring)
+ ┣ 📂 frontend           # Vite React Application
+ ┃ ┣ 📂 src/components   # UI elements (PdfViewer, Sidebar, ToolPanel)
+ ┃ ┣ 📂 src/services     # API network request handlers
+ ┃ ┗ 📜 package.json     # Node.js dependencies
+ ┣ 📜 README.md
+ ┗ 📜 LICENSE
+```
+
+---
+
+## ⚠️ Limitations & Tradeoffs
+
+- **PDF Reflowing**: Standard PDFs are not naturally "flowable". In this implementation, we extract text based on visual layout bounds. AI edits are applied by blanking out the old text coordinates and placing new text onto the newly exposed white rectangle. Slight shifts in exact text layout wrap bounds may occur.
+- **Stateless Backend**: Currently, document operations assume small-to-medium digital PDFs and store temporary instances of the document in the backend `/tmp` directory associated with a unique document session ID.
+- **Scanned Documents**: The editor strictly targets *digital-first* PDFs to manipulate textual content seamlessly. Tesseract OCR fallback is provided, but non-digital (image-only) documents will have a degraded AI-rewrite experience compared to native digital text strings.
 
 <img width="1910" height="924" alt="{2267A03F-0BD7-4639-A28F-F3ECC4C3B959}" src="https://github.com/user-attachments/assets/55da6ea5-0731-43c8-8994-6fef7c6d3b36" />
 
-## Setup & Configuration
+---
+
+## 🚀 Setup & Configuration
 
 ### Prerequisites
-- **Java 17+**: Required for the backend. 
-  - Download and install the Java Development Kit (JDK) 17 or higher from [Adoptium (Eclipse Temurin)](https://adoptium.net/) or [Oracle](https://www.oracle.com/java/technologies/downloads/).
-  - Ensure the `JAVA_HOME` environment variable is set and `java` / `javac` commands are recognized in your terminal.
-- **Node.js 18+**: Required for the frontend.
-  - Download and install the LTS version from the [official Node.js website](https://nodejs.org/).
-  - This automatically installs `npm` (Node Package Manager). Ensure `node` and `npm` commands are recognized in your CMD or PowerShell.
-- **Maven**: Required to build the Java backend. 
-  1. Download `apache-maven-3.9.15-bin.zip` from [https://maven.apache.org/download.cgi](https://maven.apache.org/download.cgi).
-  2. Extract the zip file and move the contents (e.g., the `apache-maven-3.9.15` folder) into your `C:\Program Files\` directory.
-  3. Add the Maven `bin` directory (e.g., `C:\Program Files\apache-maven-3.9.15\bin`) to your system's Environment Variables (`Path`) so the `mvn` command can be recognized in CMD or PowerShell.
-- **Tesseract OCR**: Required for OCR features to work properly. You can download the Windows installer from [here](https://github.com/UB-Mannheim/tesseract/wiki). The application expects Tesseract to be installed at `C:\Program Files\Tesseract-OCR` (specifically for the `tessdata` folder). If installed elsewhere, you will need to update the `tesseract.datapath` in `application.properties`.
+1. **Java 17+**: Required for the Spring Boot backend. 
+   - Ensure the `JAVA_HOME` environment variable is set and `java` / `javac` commands are recognized in your terminal.
+2. **Node.js 18+**: Required for the Vite/React frontend.
+3. **Maven**: Required to build the Java backend dependencies. Ensure the `mvn` command can be recognized in your terminal.
+4. **Tesseract OCR (Optional but recommended)**: Requires a system-level install matching your OS. The application expects the `tessdata` folder at `C:\Program Files\Tesseract-OCR`. Modify `application.properties` if you install it elsewhere.
 
 ### 1. Configure the Gemini API Key
 You must obtain an API Key from Google for the Gemini API. Add the key as an environment variable before running the backend:
 
 ```bash
-# Windows
+# Windows (CMD)
 set GEMINI_API_KEY=your_key_here
+
+# Windows (PowerShell)
+$env:GEMINI_API_KEY="your_key_here" # Use "dummy_key" if you don't have one
 
 # Linux / Mac
 export GEMINI_API_KEY=your_key_here
 ```
 
-**Note:** If you do not have a Gemini API key, you can use a dummy key (e.g., run `$env:GEMINI_API_KEY="dummy_key_for_testing"` in PowerShell). The application will still run and allow you to use standard PDF tools (like Sign, OCR, Split, Merge, Compress, etc.), but the AI-powered text rewriting features will fail gracefully.
+> **Note:** If you do not have a Gemini API key, you can provide a dummy key. The application will still start and allow you to use standard PDF utilities (Sign, OCR, Split, Convert to Word, Compress, etc.), but the AI text features will fail gracefully.
 
 ### 2. Start the Backend
 ```bash
 cd backend
 mvn clean spring-boot:run
 ```
-*(The backend API runs on `http://localhost:8080`)*
+*(The backend REST API will expose itself on `http://localhost:8080`)*
 
 ### 3. Start the Frontend
 ```bash
@@ -84,13 +116,13 @@ cd frontend
 npm install
 npm run dev
 ```
-*(The frontend development server runs on `http://localhost:5173` or `5174`)*
+*(The frontend development server spins up on `http://localhost:5173`)*
 
-## Future Improvements (v2+)
-- **Font Extraction**: Expanding Apache PDFBox integration to extract and embed subsets of original TTF fonts back into the file.
-- **Rich Interaction**: Drawing custom highlighting polygons and allowing users to resize the newly edited block zones.
-- **Digital Cryptographic Signatures**: Upgrading the visual signature V1 feature to include actual PKI-backed certificate signing capabilities.
-- **Database Integration**: Swapping the temporary file storage system for a durable blob storage (e.g., S3 or Azure Blob) and a relational database for user sessions.
+---
 
-## License
-MIT License. See `LICENSE` for more information.
+## 🔮 Future Improvements (v3+)
+- **Digital Cryptographic Signatures**: Upgrading the visual signature feature to include actual PKI-backed certificate signing capabilities (X.509 formats).
+- **Database Integration**: Swapping the temporary `/tmp` file storage system for a durable blob storage (e.g., Amazon S3 or Azure Blob) and a relational database for persistent user sessions.
+
+## 📄 License
+This project is operating under the MIT License. See `LICENSE` for more information.

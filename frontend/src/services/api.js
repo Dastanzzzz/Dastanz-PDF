@@ -11,6 +11,20 @@ export const uploadPdf = async (file) => {
   return response.data;
 };
 
+// ─── V2+ Preparations ──────────────────────────────────────────
+
+export const extractFonts = async (documentId) => {
+  try {
+    const response = await api.get(`/tools/extract-fonts`, {
+      params: { documentId }
+    });
+    return response.data || [];
+  } catch (error) {
+    console.warn('V2 API Error: Failed to extract fonts. Safe to ignore in V1.', error);
+    return []; // Graceful degradation for V1
+  }
+};
+
 export const rewriteText = async (originalText, instruction) => {
   const response = await api.post('/edit/rewrite', {
     originalText,

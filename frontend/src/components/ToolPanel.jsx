@@ -762,6 +762,7 @@ function ConvertTool({ documentId }) {
   const [dpi, setDpi] = useState(150);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const isWordFormat = format === 'docx' || format === 'word';
 
   const handleConvert = async () => {
     if (!documentId) return;
@@ -769,10 +770,14 @@ function ConvertTool({ documentId }) {
     setDone(false);
     try {
       const blob = await convertPdf(documentId, format, dpi);
-      const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/zip' }));
+      const mimeType = isWordFormat
+        ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        : 'application/zip';
+      const filename = isWordFormat ? 'converted.docx' : `converted_${format}.zip`;
+      const url = window.URL.createObjectURL(new Blob([blob], { type: mimeType }));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `converted_${format}.zip`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       setTimeout(() => {
@@ -798,14 +803,23 @@ function ConvertTool({ documentId }) {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 text-indigo-400 mb-1">
         <FileImage size={20} />
-        <h3 className="font-semibold text-white text-base">Convert to Images</h3>
+        <h3 className="font-semibold text-white text-base">Convert PDF</h3>
       </div>
-      <p className="text-slate-400 text-xs leading-relaxed">Convert each page of your PDF into an image file. Downloads as a ZIP archive.</p>
+      <p className="text-slate-400 text-xs leading-relaxed">
+        {isWordFormat
+          ? 'Convert PDF text content into a Word document (.docx).'
+          : 'Convert each page of your PDF into image files. Downloads as a ZIP archive.'}
+      </p>
+      {isWordFormat && (
+        <p className="text-amber-400/90 text-[10px] leading-relaxed">
+          Best for text extraction. Complex layouts, tables, and graphics may not fully match the original PDF.
+        </p>
+      )}
 
       <div>
-        <label className="block text-xs font-medium text-slate-400 mb-2">Image Format</label>
+        <label className="block text-xs font-medium text-slate-400 mb-2">Output Format</label>
         <div className="flex gap-2">
-          {['png', 'jpeg'].map(f => (
+          {['png', 'jpeg', 'docx'].map(f => (
             <button
               key={f}
               onClick={() => { setFormat(f); setDone(false); }}
@@ -815,12 +829,13 @@ function ConvertTool({ documentId }) {
                   : 'bg-slate-700/60 text-slate-300 hover:bg-slate-700'
               }`}
             >
-              {f === 'png' ? '🖼️ PNG (Lossless)' : '📷 JPEG (Smaller)'}
+              {f === 'png' ? '🖼️ PNG (Lossless)' : f === 'jpeg' ? '📷 JPEG (Smaller)' : '📝 Word (.docx)'}
             </button>
           ))}
         </div>
       </div>
 
+      {!isWordFormat && (
       <div>
         <label className="block text-xs font-medium text-slate-400 mb-2">Resolution (DPI)</label>
         <div className="flex gap-2">
@@ -842,6 +857,7 @@ function ConvertTool({ documentId }) {
           Higher DPI = better quality but larger file size
         </p>
       </div>
+      )}
 
       <button
         onClick={handleConvert}
@@ -850,7 +866,7 @@ function ConvertTool({ documentId }) {
       >
         {loading ? <><Loader2 size={16} className="animate-spin" /> Converting...</> :
          done ? <><Check size={16} /> Downloaded!</> :
-         <><FileImage size={16} /> Convert & Download ZIP</>}
+         <><FileImage size={16} /> {isWordFormat ? 'Convert & Download DOCX' : 'Convert & Download ZIP'}</>}
       </button>
     </div>
   );

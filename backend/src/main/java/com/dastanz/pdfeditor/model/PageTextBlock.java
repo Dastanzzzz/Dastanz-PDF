@@ -1,5 +1,7 @@
 package com.dastanz.pdfeditor.model;
 
+import java.util.List;
+
 public class PageTextBlock {
     private int id;
     private int pageNumber;
@@ -10,6 +12,10 @@ public class PageTextBlock {
     private float height;
     private float fontSize;
     private String fontFamily;
+    
+    // v2+ Expansion: Rich Interaction & Extracted Font
+    private String originalFontId;
+    private List<Float> polygonPoints; // [x1,y1, x2,y2, ...] for non-rectangular bounds
 
     public PageTextBlock() {
     }
@@ -35,6 +41,8 @@ public class PageTextBlock {
     public float getHeight() { return height; }
     public float getFontSize() { return fontSize; }
     public String getFontFamily() { return fontFamily; }
+    public String getOriginalFontId() { return originalFontId; }
+    public List<Float> getPolygonPoints() { return polygonPoints; }
 
     public void setId(int id) { this.id = id; }
     public void setPageNumber(int pageNumber) { this.pageNumber = pageNumber; }
@@ -43,6 +51,8 @@ public class PageTextBlock {
     public void setY(float y) { this.y = y; }
     public void setWidth(float width) { this.width = width; }
     public void setHeight(float height) { this.height = height; }
+    public void setOriginalFontId(String originalFontId) { this.originalFontId = originalFontId; }
+    public void setPolygonPoints(List<Float> polygonPoints) { this.polygonPoints = polygonPoints; }
     public void setFontSize(float fontSize) { this.fontSize = fontSize; }
     public void setFontFamily(String fontFamily) { this.fontFamily = fontFamily; }
 }

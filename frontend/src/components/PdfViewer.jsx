@@ -58,8 +58,35 @@ export default function PdfViewer({ file, textBlocks, appliedEdits, onSelectBloc
                renderTextLayer={false}
              />
              
-             {/* Overlay text blocks directly scaled on top of the page bounds */}
-             <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+             {/* V2 Preview: SVG Overlay for Rich Interaction (Polygons / Custom Shapes) */}
+             <svg className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 5 }}>
+               {getBlocksForPage(pageNumber).map(block => {
+                 // If V2 backend provides rich polygon data, we will draw it here. 
+                 // Otherwise, we fallback to drawing nothing in SVG and let the V1 <div> handle it.
+                 if (block.polygonPoints && block.polygonPoints.length > 0) {
+                    const scaledPoints = block.polygonPoints
+                      .map((pt, i) => i % 2 === 0 ? pt * scale : pt * scale)
+                      .join(' ');
+                    
+                    return (
+                        <polygon 
+                          key={`poly-${block.id}`} 
+                          points={scaledPoints} 
+                          fill="rgba(59, 130, 246, 0.1)" 
+                          stroke="rgba(37, 99, 235, 0.4)" 
+                          strokeWidth="2" 
+                          pointerEvents="visiblePainted"
+                          cursor="pointer"
+                          onClick={() => onSelectBlock(block)}
+                        />
+                    );
+                 }
+                 return null;
+               })}
+             </svg>
+
+             {/* V1 Overlay: Div-based absolute positioning (Fallback) */}
+             <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden" style={{ zIndex: 10 }}>
                {getBlocksForPage(pageNumber).map(block => {
                  const edit = getEditForBlock(block.id);
                  
@@ -77,13 +104,14 @@ export default function PdfViewer({ file, textBlocks, appliedEdits, onSelectBloc
                        top: `${(block.y - block.height * 0.2) * scale}px`, // Slight 20% shift upwards to perfectly cover the original text bounds
                        width: `${(block.width + 10) * scale}px`, // Slight horizontal padding to redact fully
                        height: `${(block.height * 1.6) * scale}px`, // Total coverage height
+                       opacity: (block.polygonPoints && block.polygonPoints.length > 0 && !edit) ? 0 : 1, // Hide V1 box border if V2 SVG polygon is active, unless edited
                      }}
                    >
                      {edit && (
                        <span style={{ 
                          fontSize: `${block.fontSize * scale}px`, // Use actual PDF point size
-
-                         fontFamily: 'Arial, Helvetica, sans-serif',
+                         // V2+ Preparation: use extracted font if available, else fallback
+                         fontFamily: block.originalFontId || 'Arial, Helvetica, sans-serif',
                          color: 'black', 
                          lineHeight: '1.2',
                          letterSpacing: '-0.3px', // Emulate typical PDF tight kerning

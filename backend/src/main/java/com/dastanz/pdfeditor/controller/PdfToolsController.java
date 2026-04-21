@@ -31,6 +31,7 @@ public class PdfToolsController {
     private final PdfRedactService redactService;
     private final PdfOcrService ocrService;
     private final PdfSignService signService;
+    private final PdfFontService fontService;
 
     public PdfToolsController(DocumentService documentService,
                                PdfCompressService compressService,
@@ -44,7 +45,8 @@ public class PdfToolsController {
                                PdfCompareService compareService,
                                PdfRedactService redactService,
                                PdfOcrService ocrService,
-                               PdfSignService signService) {
+                               PdfSignService signService,
+                               PdfFontService fontService) {
         this.documentService = documentService;
         this.compressService = compressService;
         this.passwordService = passwordService;
@@ -58,6 +60,22 @@ public class PdfToolsController {
         this.redactService = redactService;
         this.ocrService = ocrService;
         this.signService = signService;
+        this.fontService = fontService;
+    }
+
+    // ─── Font Extraction (V2 Preview) ─────────────────────────
+
+    @GetMapping("/extract-fonts")
+    public ResponseEntity<List<PdfFontService.FontMetadata>> extractFonts(@RequestParam("documentId") String documentId) {
+        try {
+            File pdfFile = documentService.getDocumentFile(documentId);
+            List<PdfFontService.FontMetadata> fonts = fontService.extractFontMetadata(pdfFile);
+            return ResponseEntity.ok(fonts);
+        } catch (Exception e) {
+            System.err.println("Font extraction failed: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     // ─── Sign ──────────────────────────────────────────────────
@@ -271,8 +289,17 @@ public class PdfToolsController {
             @RequestParam(value = "dpi", defaultValue = "150") int dpi) {
         try {
             File pdfFile = documentService.getDocumentFile(documentId);
-            byte[] result = convertService.convertToImages(pdfFile, format, dpi);
+            String normalizedFormat = format == null ? "png" : format.toLowerCase().trim();
 
+            if ("docx".equals(normalizedFormat) || "word".equals(normalizedFormat)) {
+                byte[] result = convertService.convertToWord(pdfFile);
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=converted.docx")
+                        .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
+                        .body(result);
+            }
+
+            byte[] result = convertService.convertToImages(pdfFile, normalizedFormat, dpi);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=converted.zip")
                     .contentType(MediaType.parseMediaType("application/zip"))
