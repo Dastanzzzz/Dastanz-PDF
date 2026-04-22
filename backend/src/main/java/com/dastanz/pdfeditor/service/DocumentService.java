@@ -7,25 +7,20 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 
 @Service
 public class DocumentService {
 
-    private final Path tempDir;
+    private final StorageService storageService;
 
-    public DocumentService() throws IOException {
-        tempDir = Files.createTempDirectory("pdfeditor_docs");
+    public DocumentService(StorageService storageService) {
+        this.storageService = storageService;
     }
 
     public String saveDocument(MultipartFile file) throws IOException {
-        String documentId = UUID.randomUUID().toString();
-        Path targetPath = tempDir.resolve(documentId + ".pdf");
-        Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-        return documentId;
+        // Delegate to the new StorageService backed by the Database
+        return storageService.store(file);
     }
 
     public InputStream getDocumentInputStream(String documentId) throws IOException {
@@ -33,7 +28,7 @@ public class DocumentService {
     }
 
     public File getDocumentFile(String documentId) throws IOException {
-        File file = tempDir.resolve(documentId + ".pdf").toFile();
+        File file = storageService.loadAsFile(documentId);
         if (!file.exists()) {
             throw new IOException("Document not found: " + documentId);
         }
@@ -41,10 +36,6 @@ public class DocumentService {
     }
 
     public Path getDocumentPath(String documentId) throws IOException {
-        Path path = tempDir.resolve(documentId + ".pdf");
-        if (!Files.exists(path)) {
-            throw new IOException("Document not found: " + documentId);
-        }
-        return path;
+        return getDocumentFile(documentId).toPath();
     }
 }

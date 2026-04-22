@@ -9,6 +9,18 @@
 
 A full-stack, comprehensive web application designed to securely extract, edit, reconstruct, and manage PDF documents. Leveraging **Artificial Intelligence (Gemini API)** alongside industry-standard tools like **Apache PDFBox** and **Apache POI**, it brings "word-processor-like" fluid text editing, format conversion, and rich interaction to static PDF files.
 
+## 📑 Table of Contents
+
+- [✨ Key Features](#-key-features)
+- [🏗️ Tech Stack](#️-tech-stack)
+- [📂 Project Structure](#-project-structure)
+- [⚠️ Limitations & Tradeoffs](#️-limitations--tradeoffs)
+- [🚀 Setup & Configuration](#-setup--configuration)
+- [🔮 Future Improvements (v3+)](#-future-improvements-v3)
+- [📄 License](#-license)
+
+---
+
 ## ✨ Key Features
 
 ### 🤖 AI-Powered Editing
@@ -27,7 +39,7 @@ A full-stack, comprehensive web application designed to securely extract, edit, 
 - **Compare**: Analyze and generate highlighted visual difference layers between two PDF versions.
 
 ### 🔒 Security & Verification
-- **Visual Signatures**: Securely upload and place visual user signatures explicitly on selected pages using a real-time coordinate mapper.
+- **Digital & Visual Signatures**: Securely upload and place visual signatures backed by underlying real-time **X.509 PKI cryptographic certificates** ensuring document integrity.
 - **Password Protection**: Encrypt and lock PDFs with military-grade passwords.
 - **Redaction**: Permanently obscure (black out) sensitive PI data from documents.
 - **Watermarks & Stamps**: Apply transparent text or image watermarks for copyright marking and review statuses.
@@ -74,7 +86,7 @@ A full-stack, comprehensive web application designed to securely extract, edit, 
 - **Stateless Backend**: Currently, document operations assume small-to-medium digital PDFs and store temporary instances of the document in the backend `/tmp` directory associated with a unique document session ID.
 - **Scanned Documents**: The editor strictly targets *digital-first* PDFs to manipulate textual content seamlessly. Tesseract OCR fallback is provided, but non-digital (image-only) documents will have a degraded AI-rewrite experience compared to native digital text strings.
 
-<img width="1910" height="924" alt="{2267A03F-0BD7-4639-A28F-F3ECC4C3B959}" src="https://github.com/user-attachments/assets/55da6ea5-0731-43c8-8994-6fef7c6d3b36" />
+![AI Dastanz PDF Text Editor Screenshot](https://github.com/user-attachments/assets/55da6ea5-0731-43c8-8994-6fef7c6d3b36)
 
 ---
 
@@ -87,12 +99,18 @@ A full-stack, comprehensive web application designed to securely extract, edit, 
 3. **Maven**: Required to build the Java backend dependencies. Ensure the `mvn` command can be recognized in your terminal.
 4. **Tesseract OCR (Optional but recommended)**: Requires a system-level install matching your OS. The application expects the `tessdata` folder at `C:\Program Files\Tesseract-OCR`. Modify `application.properties` if you install it elsewhere.
 
-### 1. Configure the Gemini API Key
+### 1. Configure the Gemini API Key & S3 Storage
 You must obtain an API Key from Google for the Gemini API. Add the key as an environment variable before running the backend:
 
 ```bash
 # Windows (CMD)
 set GEMINI_API_KEY=your_key_here
+
+# Optional: Cloud Blob S3 Storage Config (if storage.type=s3 in application.properties)
+set AWS_ACCESS_KEY=your_s3_access_key
+set AWS_SECRET_KEY=your_s3_secret_key
+set AWS_REGION=us-east-1
+set AWS_BUCKET_NAME=my-pdf-bucket
 
 # Windows (PowerShell)
 $env:GEMINI_API_KEY="your_key_here" # Use "dummy_key" if you don't have one
@@ -102,6 +120,7 @@ export GEMINI_API_KEY=your_key_here
 ```
 
 > **Note:** If you do not have a Gemini API key, you can provide a dummy key. The application will still start and allow you to use standard PDF utilities (Sign, OCR, Split, Convert to Word, Compress, etc.), but the AI text features will fail gracefully.
+> **Storage Note:** By default, the app runs using `/tmp` memory on local storage. To use AWS S3 Storage, change `storage.type=s3` inside `application.properties`.
 
 ### 2. Start the Backend
 ```bash
@@ -121,8 +140,7 @@ npm run dev
 ---
 
 ## 🔮 Future Improvements (v3+)
-- **Digital Cryptographic Signatures**: Upgrading the visual signature feature to include actual PKI-backed certificate signing capabilities (X.509 formats).
-- **Database Integration**: Swapping the temporary `/tmp` file storage system for a durable blob storage (e.g., Amazon S3 or Azure Blob) and a relational database for persistent user sessions.
+- **Redis / Distributed Caching**: Migrating some of the document processing sessions to a fast distributed cache like Redis to enable large-scale clustering in Kubernetes.
 
 ## 📄 License
 This project is operating under the MIT License. See `LICENSE` for more information.
