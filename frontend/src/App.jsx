@@ -21,6 +21,10 @@ function App() {
   const [selectedTool, setSelectedTool] = useState(null);
   const [toolState, setToolState] = useState(null); // Used to pass visual overlay state to PdfViewer
 
+  React.useEffect(() => {
+    window.setGlobalToolState = setToolState;
+  }, [setToolState]);
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -80,6 +84,25 @@ function App() {
       fontSize: editResult.fontSize
     }]);
     setSelectedBlock(null);
+  };
+
+  const handleFixedExport = async () => {
+    if (!documentId) return;
+    setLoading(true);
+    try {
+      const blob = await exportEditedPdf(documentId, appliedEdits, toolState);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'edited-document.pdf';
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Failed to export PDF: ' + (error.message || 'Unknown error'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleFluidExport = async (htmlContent) => {
@@ -165,7 +188,10 @@ function App() {
         editMode={editMode}
         onModeChange={handleModeChange}
         selectedTool={selectedTool}
-        onToolSelect={setSelectedTool}
+        onToolSelect={(toolId) => {
+          setSelectedTool(toolId);
+          setToolState(null);
+        }}
       />
       
       <main className="flex-1 flex flex-col relative h-full">
@@ -190,6 +216,7 @@ function App() {
             appliedEdits={appliedEdits}
             onSelectBlock={setSelectedBlock}
             toolState={toolState}
+            setToolState={setToolState}
           />
         ) : (
           <FluidEditor 
@@ -205,7 +232,10 @@ function App() {
         <ToolPanel
           tool={selectedTool}
           documentId={documentId}
-          onClose={() => setSelectedTool(null)}
+          onClose={() => {
+            setSelectedTool(null);
+            setToolState(null);
+          }}
           toolState={toolState}
           setToolState={setToolState}
         />
@@ -214,6 +244,8 @@ function App() {
           selectedBlock={selectedBlock} 
           handleApplyEdit={handleApplyEdit}
           handleCancelEdit={() => setSelectedBlock(null)}
+          documentId={documentId}
+          handleFixedExport={handleFixedExport}
         />
       ) : null}
     </div>

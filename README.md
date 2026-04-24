@@ -25,12 +25,16 @@ A full-stack, comprehensive web application designed to securely extract, edit, 
 
 ### 🤖 AI-Powered Editing
 - **Smart Text Manipulation**: Rewrite, summarize, or alter PDF text blocks instantly using Gemini AI while maintaining the document's original narrative context.
+- **AI Document Chat**: Interactively chat with your PDF to ask context-aware questions and extract insights.
+- **AI Translation**: Seamlessly translate targeted text blocks natively within the document layer.
 - **Fluid Editing**: Edit text directly on the canvas seamlessly with constrained boundary management.
 - **Coordinate-Based Extraction**: Precision layout detection leveraging Apache PDFBox.
 - **Rich Interaction**: Interactive SVG-based wrapper canvas for drawing custom highlighting polygons and resizing boundary boxes across pages.
 - **Font Extraction**: Deep PDF metadata integration mapping original TrueType/Type1 fonts to precisely match dynamic rendering styles.
 
 ### 🛠️ Comprehensive PDF Utilities
+- **Markup & Annotation**: Draw freehand lines or apply transparent text highlights directly over your PDF.
+- **Insert Custom Images**: Cleanly place and scale external image assets anywhere on your document.
 - **Convert File Formats**: Export or convert PDFs seamlessly (e.g., PDF to JPG ZIPs and structurally rich PDF to Word/DOCX capabilities).
 - **Split & Merge**: Divide large PDFs into multiple parts or combine several PDFs into one optimized document.
 - **Arrange**: Reorder or delete specific pages visually without losing layout metadata.
@@ -140,7 +144,8 @@ npm run dev
 ---
 
 ## 🔮 Future Improvements (v3+)
-- **Redis / Distributed Caching**: Migrating some of the document processing sessions to a fast distributed cache like Redis to enable large-scale clustering in Kubernetes.
+- **Desktop Application Packaging**: Porting the localhost application into a standalone Electron or Tauri wrapper for a native desktop experience without spinning up backend servers manually.
+- **Local Offline AI Models**: Integrating local models (e.g., Llama 3 via Ollama) to replace Gemini for completely offline and private AI document processing.
 
 ## 📄 License
 This project is operating under the MIT License. See `LICENSE` for more information.

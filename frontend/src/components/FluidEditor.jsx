@@ -236,38 +236,7 @@ export default function FluidEditor({ content, onChange, onExport, file }) {
           <Underline size={18} />
         </button>
 
-        <div className="border-l border-slate-300 h-6"></div>
 
-        <div className="relative" ref={menuRef}>
-          <button
-            onMouseDown={(e) => { e.preventDefault(); saveSelection(); }}
-            onClick={() => setShowFontSizeMenu(!showFontSizeMenu)}
-            className="p-2 hover:bg-slate-200 rounded transition flex items-center gap-1 text-slate-700 text-sm font-medium"
-            title="Font Size"
-          >
-            <span>A</span>
-            <ChevronDown size={16} />
-          </button>
-          
-          {showFontSizeMenu && (
-            <div className="absolute top-full left-0 mt-1 bg-white border border-slate-300 rounded shadow-lg z-50 min-w-40">
-              {fontSizes.map((size) => (
-                <button
-                  key={size}
-                  onMouseDown={(e) => { e.preventDefault(); saveSelection(); }}
-                  onClick={() => {
-                    applyFontSize(size);
-                    setShowFontSizeMenu(false);
-                  }}
-                  className="block w-full text-left px-4 py-2 hover:bg-blue-50 text-slate-700 transition border-b border-slate-100 last:border-b-0"
-                  style={{ fontSize: size + 'px' }}
-                >
-                  {size}px
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
 
         <div className="flex-1"></div>
 

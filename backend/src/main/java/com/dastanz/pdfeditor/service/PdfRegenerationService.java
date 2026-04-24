@@ -15,43 +15,68 @@ import java.util.List;
 @Service
 public class PdfRegenerationService {
 
-    public byte[] applyEdits(InputStream pdfInputStream, List<EditOperation> edits) throws IOException {
+    public byte[] applyEdits(InputStream pdfInputStream, List<EditOperation> edits, java.util.Map<String, Object> toolState) throws IOException {
         try (PDDocument document = PDDocument.load(pdfInputStream)) {
-            for (EditOperation edit : edits) {
-                if (edit.getPageNumber() - 1 < 0 || edit.getPageNumber() - 1 >= document.getNumberOfPages())
-                    continue;
+            // Apply Text Edits
+            if (edits != null) {
+                for (EditOperation edit : edits) {
+                    if (edit.getPageNumber() - 1 < 0 || edit.getPageNumber() - 1 >= document.getNumberOfPages())
+                        continue;
 
-                PDPage page = document.getPage(edit.getPageNumber() - 1);
+                    PDPage page = document.getPage(edit.getPageNumber() - 1);
 
-                try (PDPageContentStream contentStream = new PDPageContentStream(
-                        document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
+                    try (PDPageContentStream contentStream = new PDPageContentStream(
+                            document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
 
-                    // 1. Draw a white rectangle to cover the old text
-                    contentStream.setNonStrokingColor(1.0f, 1.0f, 1.0f); // white
-                    // Y axis in PDFBox starts at bottom. If our extraction gave Y from bottom, we
-                    // use it directly.
-                    // Wait, PDFTextStripper gets Y from top, but PDFBox drawing uses Y from bottom.
-                    // We must convert Y if the extraction gave it from top.
-                    // Let's assume standard PDF coordinates (origin at bottom left)
-                    float cropBoxHeight = page.getCropBox().getHeight();
-                    float adjustedY = cropBoxHeight - edit.getY() - edit.getHeight();
-                    // Note: This coordinate math is a rough approximation and depends on extraction
-                    // specifics
+                        float cropBoxHeight = page.getCropBox().getHeight();
+                        float adjustedY = cropBoxHeight - edit.getY() - edit.getHeight();
 
-                    // Add some padding to cover text
-                    contentStream.addRect(edit.getX() - 2, adjustedY - 2, edit.getWidth() + 4, edit.getHeight() + 4);
-                    contentStream.fill();
+                        contentStream.setNonStrokingColor(1.0f, 1.0f, 1.0f); // white
+                        contentStream.addRect(edit.getX() - 2, adjustedY - 2, edit.getWidth() + 4, edit.getHeight() + 4);
+                        contentStream.fill();
 
-                    // 2. Draw the new text
-                    contentStream.setNonStrokingColor(0.0f, 0.0f, 0.0f); // black
-                    contentStream.beginText();
-                    contentStream.setFont(PDType1Font.HELVETICA, edit.getFontSize());
-                    contentStream.newLineAtOffset(edit.getX(), adjustedY + 2); // roughly baseline
+                        contentStream.setNonStrokingColor(0.0f, 0.0f, 0.0f); // black
+                        contentStream.beginText();
+                        contentStream.setFont(PDType1Font.HELVETICA, edit.getFontSize());
+                        contentStream.newLineAtOffset(edit.getX(), adjustedY + 2);
+                        contentStream.showText(edit.getNewText());
+                        contentStream.endText();
+                    }
+                }
+            }
 
-                    // Note: newText might need line wrapping in a real app, but for v1 we write it
-                    // out directly
-                    contentStream.showText(edit.getNewText());
-                    contentStream.endText();
+            // Apply Tools (Redaction)
+            if (toolState != null && toolState.containsKey("boxes")) {
+                Object boxesObj = toolState.get("boxes");
+                if (boxesObj instanceof java.util.List) {
+                    java.util.List<?> boxes = (java.util.List<?>) boxesObj;
+                    for (Object b : boxes) {
+                        if (b instanceof java.util.Map) {
+                            java.util.Map<?, ?> box = (java.util.Map<?, ?>) b;
+                            int pageNum = box.get("page") instanceof Number ? ((Number)box.get("page")).intValue() : 1;
+                            
+                            if (pageNum - 1 < 0 || pageNum - 1 >= document.getNumberOfPages()) continue;
+                            
+                            PDPage page = document.getPage(pageNum - 1);
+                            try (PDPageContentStream contentStream = new PDPageContentStream(
+                                    document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
+                                
+                                float x = box.get("x") instanceof Number ? ((Number)box.get("x")).floatValue() : 0;
+                                float y = box.get("y") instanceof Number ? ((Number)box.get("y")).floatValue() : 0;
+                                float w = box.get("width") instanceof Number ? ((Number)box.get("width")).floatValue() : 0;
+                                float h = box.get("height") instanceof Number ? ((Number)box.get("height")).floatValue() : 0;
+                                
+                                float cropBoxHeight = page.getCropBox().getHeight();
+                                // Assuming React-PDF renders Y from top left
+                                float adjustedY = cropBoxHeight - y - h;
+                                
+                                // Redaction is pitch black fill
+                                contentStream.setNonStrokingColor(0.0f, 0.0f, 0.0f);
+                                contentStream.addRect(x, adjustedY, w, h);
+                                contentStream.fill();
+                            }
+                        }
+                    }
                 }
             }
 

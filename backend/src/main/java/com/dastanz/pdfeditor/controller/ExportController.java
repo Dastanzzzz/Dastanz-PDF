@@ -25,7 +25,7 @@ public class ExportController {
     @PostMapping("/export")
     public ResponseEntity<byte[]> exportPdf(@RequestBody ExportRequestDto request) {
         try (InputStream is = documentService.getDocumentInputStream(request.getDocumentId())) {
-            byte[] regeneratedPdf = regenerationService.applyEdits(is, request.getEdits());
+            byte[] regeneratedPdf = regenerationService.applyEdits(is, request.getEdits(), request.getToolState());
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);

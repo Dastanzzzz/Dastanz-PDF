@@ -4,9 +4,9 @@ import {
   X, UploadCloud, GripVertical, AlertCircle, Check, Loader2,
   Scissors, LayoutGrid, FileImage, GitCompareArrows,
   RotateCw, RotateCcw, Trash2, Copy, ChevronUp, ChevronDown,
-  EyeOff, ScanSearch, PenTool, CheckCircle
+  EyeOff, ScanSearch, PenTool, CheckCircle, Edit3, ImagePlus
 } from 'lucide-react';
-import { compressPdf, addPassword, mergePdfs, addWatermark, addStamp, splitPdf, arrangePdf, convertPdf, comparePdfs, redactPdf, ocrPdf, signPdf } from '../services/toolsApi';
+import { compressPdf, addPassword, mergePdfs, addWatermark, addStamp, splitPdf, arrangePdf, convertPdf, comparePdfs, redactPdf, ocrPdf, signPdf, drawOnPdf, insertImageOnPdf } from '../services/toolsApi';
 
 function downloadBlob(blob, filename) {
   const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
@@ -979,19 +979,44 @@ function CompareTool() {
 
 // ─── Redact Tool ───────────────────────────────────────────────
 
-function RedactTool({ documentId }) {
-  const [searchText, setSearchText] = useState('');
+function RedactTool({ documentId, toolState, setToolState }) {
   const [color, setColor] = useState('#000000');
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
-  const handleRedact = async () => {
-    if (!documentId || !searchText.trim()) return;
+  React.useEffect(() => {
+    if (setToolState) {
+        setToolState(prev => ({
+            ...prev,
+            active: true,
+            type: 'redact',
+            color: color,
+            boxes: prev?.boxes || []
+        }));
+    }
+  }, [color]);
+
+  const handleApply = async () => {
+    if (!documentId || !toolState || !toolState.boxes || toolState.boxes.length === 0) return;
     setLoading(true);
     setDone(false);
     try {
-      const blob = await redactPdf(documentId, searchText, color);
-      downloadBlob(blob, 'redacted.pdf');
+      const redactRequestDto = {
+        documentId: documentId,
+        clientPageWidth: toolState.clientPageWidth || 0,
+        clientPageHeight: toolState.clientPageHeight || 0,
+        boxes: toolState.boxes
+      };
+      // Note: Make sure to import redactPdfBoxes from your api service in ToolPanel.jsx if not already
+      const { redactPdfBoxes } = await import('../services/toolsApi');
+      const blob = await redactPdfBoxes(redactRequestDto);
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'redacted.pdf';
+      a.click();
+      window.URL.revokeObjectURL(url);
       setDone(true);
     } catch (e) {
       console.error(e);
@@ -1001,24 +1026,51 @@ function RedactTool({ documentId }) {
     }
   };
 
+  const handleClear = () => {
+    if (setToolState && toolState) {
+        setToolState({ ...toolState, boxes: [] });
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 text-red-400 mb-1">
         <EyeOff size={20} />
-        <h3 className="font-semibold text-white text-base">Redact Text</h3>
+        <h3 className="font-semibold text-white text-base">Redact Area</h3>
       </div>
-      <p className="text-slate-400 text-xs leading-relaxed">Permanently black out sensitive text in your PDF. All occurrences of the search term will be covered.</p>
+      
+      <div className="bg-red-900/30 border border-red-500/40 rounded-lg p-3 text-center mb-1">
+        <div className="w-10 h-10 bg-red-800/50 rounded-full flex items-center justify-center mx-auto mb-2">
+           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-200">
+             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+             <line x1="3" y1="9" x2="21" y2="9"></line>
+             <line x1="9" y1="21" x2="9" y2="9"></line>
+           </svg>
+        </div>
+        <p className="text-white font-medium text-sm">Add a Redaction Box</p>
+        <p className="text-slate-300 text-[11px] mt-1.5 leading-relaxed mb-3">
+          Click the button below to add a box. You can then <strong>drag it around</strong> and <strong>resize it</strong> on the PDF document.
+        </p>
 
-      <div>
-        <label className="block text-xs font-medium text-slate-400 mb-1.5">Text to Redact *</label>
-        <input
-          type="text"
-          value={searchText}
-          onChange={(e) => { setSearchText(e.target.value); setDone(false); }}
-          placeholder="Enter text to redact..."
-          className="w-full bg-slate-700/60 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/30"
-        />
-        <p className="text-slate-500 text-[10px] mt-1.5">Case-insensitive. All occurrences will be redacted.</p>
+        <button
+          onClick={() => {
+            if (setToolState && toolState) {
+              setToolState({
+                ...toolState,
+                boxes: [...(toolState.boxes || []), {
+                  id: Date.now().toString(),
+                  page: 1, // Usually the user is looking at page 1 or they can scroll.
+                  color: color,
+                  x: 100, y: 100, width: 250, height: 60
+                }]
+              });
+            }
+          }}
+          className="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium text-sm transition-all shadow-md flex items-center justify-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Add Box
+        </button>
       </div>
 
       <div>
@@ -1028,7 +1080,7 @@ function RedactTool({ documentId }) {
             {['#000000', '#FF0000', '#333333', '#FFFFFF'].map(c => (
               <button
                 key={c}
-                onClick={() => { setColor(c); setDone(false); }}
+                onClick={() => setColor(c)}
                 className={`w-7 h-7 rounded-md border-2 transition-all ${
                   color === c 
                     ? 'border-red-400 scale-110 shadow-md shadow-red-600/20' 
@@ -1042,29 +1094,37 @@ function RedactTool({ documentId }) {
           <input
             type="color"
             value={color}
-            onChange={(e) => { setColor(e.target.value); setDone(false); }}
+            onChange={(e) => setColor(e.target.value)}
             className="w-8 h-7 rounded border border-slate-600 cursor-pointer bg-transparent"
           />
           <span className="text-xs text-slate-400 font-mono">{color}</span>
         </div>
       </div>
 
-      <div className="bg-amber-900/20 border border-amber-700/30 rounded-lg p-2.5 flex items-start gap-2">
+      <div className="flex gap-2 mt-2">
+          <button
+            onClick={handleClear}
+            className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded text-sm font-medium transition-colors"
+          >
+            Clear Boxes
+          </button>
+          <button
+            onClick={handleApply}
+            disabled={loading || !toolState || !toolState.boxes || toolState.boxes.length === 0}
+            className="flex-1 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded text-sm font-medium transition-colors shadow-md shadow-red-600/20"
+          >
+            {loading ? 'Processing...' : 'Apply Redaction'}
+          </button>
+      </div>
+
+      <div className="bg-amber-900/20 border border-amber-700/30 rounded-lg p-2.5 flex items-start gap-2 mt-2">
         <AlertCircle size={14} className="text-amber-400 flex-shrink-0 mt-0.5" />
         <p className="text-amber-300/80 text-[10px] leading-relaxed">
-          Redaction is permanent. The original text under the redaction box will be visually hidden. Save your original file before redacting.
+          Redaction is permanent. The original text and imagery under the redaction box will be visually hidden. Save your original file before redacting.
         </p>
       </div>
 
-      <button
-        onClick={handleRedact}
-        disabled={loading || !documentId || !searchText.trim()}
-        className="w-full py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition-all shadow-md shadow-red-600/20"
-      >
-        {loading ? <><Loader2 size={16} className="animate-spin" /> Redacting...</> :
-         done ? <><Check size={16} /> Downloaded!</> :
-         <><EyeOff size={16} /> Redact & Download</>}
-      </button>
+      {done && <p className="text-red-400 text-xs text-center mt-1 flex items-center justify-center gap-1"><CheckCircle size={14}/> Redacted document ready!</p>}
     </div>
   );
 }
@@ -1257,9 +1317,213 @@ function SignTool({ documentId, toolState, setToolState }) {
   );
 }
 
+// ─── Draw Tool ──────────────────────────────────────────────────
+
+function DrawTool({ documentId, toolState, setToolState }) {
+  const [color, setColor] = useState('#fbbf24');
+  const [thickness, setThickness] = useState(5);
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+
+  // Initialize toolState for drawing
+  React.useEffect(() => {
+    if (setToolState) {
+        setToolState({
+            active: true,
+            type: 'draw',
+            color: color,
+            thickness: thickness,
+            strokes: []
+        });
+    }
+  }, [color, thickness]);
+
+  const handleApply = async () => {
+    if (!documentId || !toolState || toolState.strokes.length === 0) return;
+    setLoading(true);
+    setDone(false);
+    try {
+      const drawRequestDto = {
+        documentId: documentId,
+        clientPageWidth: toolState.clientPageWidth || 0,
+        clientPageHeight: toolState.clientPageHeight || 0,
+        strokes: toolState.strokes
+      };
+      const blob = await drawOnPdf(drawRequestDto);
+      downloadBlob(blob, 'drawn.pdf');
+      setDone(true);
+    } catch (e) {
+      console.error(e);
+      alert('Draw failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClear = () => {
+    if (setToolState && toolState) {
+        setToolState({ ...toolState, strokes: [] });
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-2 text-yellow-400 mb-1">
+        <Edit3 size={20} />
+        <h3 className="font-semibold text-white text-base">Draw / Highlight</h3>
+      </div>
+      <p className="text-slate-400 text-xs leading-relaxed">Draw on the PDF directly. Use thick yellow for highlighting.</p>
+
+      <div>
+        <label className="block text-xs font-medium text-slate-400 mb-1.5">Color</label>
+        <div className="flex gap-2">
+            {['#fbbf24', '#f87171', '#ef4444', '#3b82f6', '#10b981', '#000000'].map(c => (
+                <button 
+                  key={c} 
+                  onClick={() => setColor(c)}
+                  className={`w-8 h-8 rounded-full border-2 ${color === c ? 'border-white' : 'border-transparent'}`}
+                  style={{ backgroundColor: c }}
+                />
+            ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-slate-400 mb-1.5">Thickness: {thickness}px</label>
+        <input 
+          type="range" value={thickness} onChange={e => setThickness(Number(e.target.value))} 
+          min="1" max="25" step="1" 
+          className="w-full accent-yellow-500" 
+        />
+      </div>
+
+      <div className="flex gap-2 mt-2">
+          <button
+            onClick={handleClear}
+            className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded text-sm font-medium transition-colors"
+          >
+            Clear Strokes
+          </button>
+          <button
+            onClick={handleApply}
+            disabled={loading || !toolState || !toolState.strokes || toolState.strokes.length === 0}
+            className="flex-1 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 text-white rounded text-sm font-medium transition-colors"
+          >
+            {loading ? 'Processing...' : 'Apply Drawing'}
+          </button>
+      </div>
+
+      {done && <p className="text-yellow-400 text-xs text-center mt-2 flex items-center justify-center gap-1"><CheckCircle size={14}/> Drawn document ready!</p>}
+    </div>
+  );
+}
+
+// ─── Insert Image Tool ──────────────────────────────────────────
+
+function InsertImageTool({ documentId, toolState, setToolState }) {
+  const [imageFile, setImageFile] = React.useState(null);
+  const [page, setPage] = React.useState(1);
+  const [x, setX] = React.useState(50);
+  const [y, setY] = React.useState(50);
+  const [scale, setScale] = React.useState(1.0);
+  const [loading, setLoading] = React.useState(false);
+  const [done, setDone] = React.useState(false);
+  const fileInputRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (imageFile && setToolState) {
+        setToolState({
+            active: true,
+            type: 'insertImage',
+            url: URL.createObjectURL(imageFile),
+            page, x, y, scale
+        });
+    } else if (setToolState && toolState && toolState.type === 'insertImage') {
+        setToolState(null);
+    }
+  }, [imageFile, page, x, y, scale]);
+
+  const handleApply = async () => {
+    if (!documentId || !imageFile) return;
+    setLoading(true);
+    setDone(false);
+    try {
+      const blob = await insertImageOnPdf(documentId, imageFile, page, x, y, scale);
+      downloadBlob(blob, 'with-image.pdf');
+      setDone(true);
+    } catch (e) {
+      console.error(e);
+      alert('Insert Image failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-2 text-pink-400 mb-1">
+        <ImagePlus size={20} />
+        <h3 className="font-semibold text-white text-base">Insert Image</h3>
+      </div>
+      <p className="text-slate-400 text-xs leading-relaxed">Add a custom image cleanly anywhere on a page.</p>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg"
+        onChange={(e) => { setImageFile(e.target.files[0]); setDone(false); }}
+        className="hidden"
+      />
+
+      <button
+        onClick={() => fileInputRef.current?.click()}
+        className="w-full py-3 border-2 border-dashed border-slate-600 rounded-lg text-slate-400 hover:border-pink-500 hover:text-pink-400 transition-all flex items-center justify-center gap-2 text-sm"
+      >
+        <UploadCloud size={18} />
+        {imageFile ? imageFile.name : 'Upload Image (PNG/JPG)'}
+      </button>
+
+      <div>
+        <label className="block text-xs font-medium text-slate-400 mb-1.5">Page Number</label>
+        <input 
+          type="number" min="1" value={page} onChange={e => setPage(parseInt(e.target.value) || 1)}
+          className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-slate-200 outline-none focus:border-pink-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-slate-400 mb-1.5">Horizontal Position: {x}%</label>
+        <input type="range" value={x} onChange={e => setX(Number(e.target.value))} min="0" max="100" step="1" className="w-full accent-pink-500" />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-slate-400 mb-1.5">Vertical Position: {y}%</label>
+        <input type="range" value={y} onChange={e => setY(Number(e.target.value))} min="0" max="100" step="1" className="w-full accent-pink-500" />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-slate-400 mb-1.5">Scale/Size: {scale}x</label>
+        <input type="range" value={scale} onChange={e => setScale(Number(e.target.value))} min="0.1" max="5" step="0.1" className="w-full accent-pink-500" />
+      </div>
+
+      <button
+        onClick={handleApply}
+        disabled={loading || !imageFile}
+        className="w-full mt-2 py-2 bg-pink-600 hover:bg-pink-700 disabled:opacity-50 text-white rounded text-sm font-medium transition-colors"
+      >
+        {loading ? 'Processing...' : 'Apply Image'}
+      </button>
+
+      {done && <p className="text-pink-400 text-xs text-center mt-2 flex items-center justify-center gap-1"><CheckCircle size={14}/> Image inserted successfully!</p>}
+    </div>
+  );
+}
+
 export default function ToolPanel({ tool, documentId, onClose, toolState, setToolState }) {
   const renderTool = () => {
     switch (tool) {
+      case 'draw':     return <DrawTool documentId={documentId} toolState={toolState} setToolState={setToolState} />;
+      case 'insertImage': return <InsertImageTool documentId={documentId} toolState={toolState} setToolState={setToolState} />;
       case 'compress': return <CompressTool documentId={documentId} />;
       case 'password': return <PasswordTool documentId={documentId} />;
       case 'merge':    return <MergeTool />;
@@ -1269,7 +1533,7 @@ export default function ToolPanel({ tool, documentId, onClose, toolState, setToo
       case 'arrange':  return <ArrangeTool documentId={documentId} />;
       case 'convert':  return <ConvertTool documentId={documentId} />;
       case 'compare':  return <CompareTool />;
-      case 'redact':   return <RedactTool documentId={documentId} />;
+      case 'redact':   return <RedactTool documentId={documentId} toolState={toolState} setToolState={setToolState} />;
       case 'ocr':      return <OcrTool documentId={documentId} />;
       case 'sign':     return <SignTool documentId={documentId} toolState={toolState} setToolState={setToolState} />;
       default: return null;

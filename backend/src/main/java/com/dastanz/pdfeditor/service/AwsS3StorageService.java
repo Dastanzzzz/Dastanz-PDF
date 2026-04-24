@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -64,7 +65,7 @@ public class AwsS3StorageService implements StorageService {
                     .contentType(contentType != null ? contentType : "application/pdf")
                     .build();
 
-            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, inputStream.available()));
+            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, contentLength));
 
             DocumentMeta meta = new DocumentMeta();
             meta.setId(fileId);
@@ -113,7 +114,7 @@ public class AwsS3StorageService implements StorageService {
             if (storedFilename.contains(".")) {
                 idStr = storedFilename.substring(0, storedFilename.lastIndexOf("."));
             }
-            repository.deleteById(UUID.fromString(idStr));
+            repository.deleteById(Objects.requireNonNull(UUID.fromString(idStr)));
         } catch (Exception e) {
             throw new RuntimeException("Failed to delete file from S3: " + storedFilename, e);
         }

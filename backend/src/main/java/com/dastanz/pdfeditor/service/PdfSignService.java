@@ -31,6 +31,14 @@ public class PdfSignService {
     }
 
     public byte[] sign(File pdfFile, byte[] imageBytes, int page, float xPct, float yPct, float scale) throws IOException {
+        return process(pdfFile, imageBytes, page, xPct, yPct, scale, true);
+    }
+
+    public byte[] insertImage(File pdfFile, byte[] imageBytes, int page, float xPct, float yPct, float scale) throws IOException {
+        return process(pdfFile, imageBytes, page, xPct, yPct, scale, false);
+    }
+
+    private byte[] process(File pdfFile, byte[] imageBytes, int page, float xPct, float yPct, float scale, boolean addDigitalSignature) throws IOException {
         try (PDDocument document = PDDocument.load(pdfFile)) {
             // PDFBox uses 0-indexed pages
             if (page < 1 || page > document.getNumberOfPages()) {
@@ -38,7 +46,7 @@ public class PdfSignService {
             }
             PDPage pdPage = document.getPage(page - 1);
             
-            PDImageXObject image = PDImageXObject.createFromByteArray(document, imageBytes, "signature");
+            PDImageXObject image = PDImageXObject.createFromByteArray(document, imageBytes, "image");
             
             float pdfPageWidth = pdPage.getCropBox().getWidth();
             float pdfPageHeight = pdPage.getCropBox().getHeight();
@@ -58,7 +66,7 @@ public class PdfSignService {
             }
 
             // --- Real Digital Cryptographic Signature Addition ---
-            if (selfSignedIdentity != null) {
+            if (addDigitalSignature && selfSignedIdentity != null) {
                 PDSignature signature = new PDSignature();
                 signature.setFilter(PDSignature.FILTER_ADOBE_PPKLITE);
                 signature.setSubFilter(PDSignature.SUBFILTER_ADBE_PKCS7_DETACHED);

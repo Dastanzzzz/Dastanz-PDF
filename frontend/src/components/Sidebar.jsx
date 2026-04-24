@@ -1,7 +1,9 @@
 import React from 'react';
-import { FileText, Save, Info, Minimize2, Lock, Merge, Droplets, Stamp, Scissors, LayoutGrid, FileImage, GitCompareArrows, EyeOff, ScanSearch, PenTool } from 'lucide-react';
+import { FileText, Save, Info, Minimize2, Lock, Merge, Droplets, Stamp, Scissors, LayoutGrid, FileImage, GitCompareArrows, EyeOff, ScanSearch, PenTool, Edit3, ImagePlus } from 'lucide-react';
 
 const tools = [
+  { id: 'draw',      label: 'Draw / Highlight', icon: Edit3,     activeClass: 'bg-yellow-600/20 text-yellow-400 border border-yellow-500/30' },
+  { id: 'insertImage',label: 'Insert Image',   icon: ImagePlus, activeClass: 'bg-pink-600/20 text-pink-400 border border-pink-500/30' },
   { id: 'compress',  label: 'Compress',      icon: Minimize2, activeClass: 'bg-blue-600/20 text-blue-400 border border-blue-500/30' },
   { id: 'password',  label: 'Add Password',  icon: Lock,      activeClass: 'bg-amber-600/20 text-amber-400 border border-amber-500/30' },
   { id: 'merge',     label: 'Merge PDFs',    icon: Merge,     activeClass: 'bg-green-600/20 text-green-400 border border-green-500/30' },

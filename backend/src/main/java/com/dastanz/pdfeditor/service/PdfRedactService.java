@@ -1,5 +1,7 @@
 package com.dastanz.pdfeditor.service;
 
+import com.dastanz.pdfeditor.dto.RedactBoxDto;
+import com.dastanz.pdfeditor.dto.RedactBoxRequestDto;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -60,6 +62,42 @@ public class PdfRedactService {
                 }
             }
 
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            document.save(out);
+            return out.toByteArray();
+        }
+    }
+
+    public byte[] redactByBoxes(File pdfFile, RedactBoxRequestDto request) throws IOException {
+        try (PDDocument document = PDDocument.load(pdfFile)) {
+            if (request.getBoxes() != null) {
+                for (RedactBoxDto box : request.getBoxes()) {
+                    if (box.getPage() < 1 || box.getPage() > document.getNumberOfPages()) {
+                        continue;
+                    }
+                    PDPage page = document.getPage(box.getPage() - 1);
+                    float pdfPageWidth = page.getCropBox().getWidth();
+                    float pdfPageHeight = page.getCropBox().getHeight();
+
+                    // Map scale between frontend client rendering size and native PDF resolution
+                    float scaleX = request.getClientPageWidth() > 0 ? pdfPageWidth / request.getClientPageWidth() : 1f;
+                    float scaleY = request.getClientPageHeight() > 0 ? pdfPageHeight / request.getClientPageHeight() : 1f;
+
+                    try (PDPageContentStream cs = new PDPageContentStream(
+                            document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
+                        cs.setNonStrokingColor(parseColor(box.getColor()));
+
+                        float x = box.getX() * scaleX;
+                        float w = box.getWidth() * scaleX;
+                        float h = box.getHeight() * scaleY;
+                        // PDFBox coordinates start bottom-left, client starts top-left
+                        float y = pdfPageHeight - (box.getY() * scaleY) - h;
+
+                        cs.addRect(x, y, w, h);
+                        cs.fill();
+                    }
+                }
+            }
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             document.save(out);
             return out.toByteArray();

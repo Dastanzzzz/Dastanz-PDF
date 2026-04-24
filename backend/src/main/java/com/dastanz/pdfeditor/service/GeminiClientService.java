@@ -1,7 +1,10 @@
 package com.dastanz.pdfeditor.service;
 
+import com.dastanz.pdfeditor.dto.ChatDocumentResponseDto;
 import com.dastanz.pdfeditor.dto.RewriteRequestDto;
 import com.dastanz.pdfeditor.dto.RewriteResponseDto;
+import com.dastanz.pdfeditor.dto.TranslateRequestDto;
+import com.dastanz.pdfeditor.dto.TranslateResponseDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -64,6 +67,75 @@ public class GeminiClientService {
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Failed to rewrite text via Gemini API", e);
+        }
+    }
+
+    @SuppressWarnings("null")
+    public TranslateResponseDto translateText(TranslateRequestDto request) {
+        String prompt = "Translate the following text to " + request.getTargetLanguage() + ".\n"
+            + "Maintain the exact same tone and formatting.\n"
+            + "Original Text: " + request.getOriginalText();
+
+        Map<String, Object> requestBody = Map.of(
+            "contents", List.of(
+                Map.of("parts", List.of(
+                    Map.of("text", prompt)
+                ))
+            )
+        );
+
+        try {
+            String responseStr = restClient.post()
+                .body(requestBody)
+                .retrieve()
+                .body(String.class);
+
+            var root = objectMapper.readTree(responseStr);
+            String translated = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
+            
+            TranslateResponseDto response = new TranslateResponseDto();
+            response.setTranslatedText(translated.trim());
+            return response;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to translate text via Gemini API", e);
+        }
+    }
+
+    @SuppressWarnings("null")
+    public ChatDocumentResponseDto chatWithDocument(String documentText, String question) {
+        String prompt = "You are a specialized AI assistant analyzing a document.\n"
+            + "Use the provided document text ONLY to answer the following question.\n"
+            + "If the answer is not in the document, say 'I cannot find the answer in the document.'\n\n"
+            + "--- DOCUMENT CONTENT START ---\n"
+            + documentText + "\n"
+            + "--- DOCUMENT CONTENT END ---\n\n"
+            + "Question/Task: " + question;
+
+        Map<String, Object> requestBody = Map.of(
+            "contents", List.of(
+                Map.of("parts", List.of(
+                    Map.of("text", prompt)
+                ))
+            )
+        );
+
+        try {
+            String responseStr = restClient.post()
+                .body(requestBody)
+                .retrieve()
+                .body(String.class);
+
+            var root = objectMapper.readTree(responseStr);
+            String answer = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
+            
+            ChatDocumentResponseDto response = new ChatDocumentResponseDto();
+            response.setAnswer(answer.trim());
+            return response;
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Fallback for document too large error or Gemini API failures
+            throw new RuntimeException("Failed to process chat via Gemini API. The document may be too large.", e);
         }
     }
 }

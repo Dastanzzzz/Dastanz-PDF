@@ -33,13 +33,29 @@ export const rewriteText = async (originalText, instruction) => {
   return response.data;
 };
 
-export const exportEditedPdf = async (documentId, edits) => {
+export const translateText = async (originalText, targetLanguage) => {
+  const response = await api.post('/edit/translate', {
+    originalText,
+    targetLanguage
+  });
+  return response.data;
+};
+
+export const chatWithDocument = async (documentId, question) => {
+  const response = await api.post('/edit/chat', {
+    documentId,
+    question
+  });
+  return response.data;
+};
+
+export const exportEditedPdf = async (documentId, edits, toolState) => {
   const response = await fetch('http://localhost:8080/api/pdf/export', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ documentId, edits })
+    body: JSON.stringify({ documentId, edits, toolState })
   });
   if (!response.ok) throw new Error('Export failed');
   return await response.blob();

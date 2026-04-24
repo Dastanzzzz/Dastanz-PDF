@@ -2,6 +2,8 @@ package com.dastanz.pdfeditor.controller;
 
 import com.dastanz.pdfeditor.dto.ArrangeRequestDto;
 import com.dastanz.pdfeditor.dto.CompareResultDto;
+import com.dastanz.pdfeditor.dto.DrawRequestDto;
+import com.dastanz.pdfeditor.dto.RedactBoxRequestDto;
 import com.dastanz.pdfeditor.service.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -32,6 +34,7 @@ public class PdfToolsController {
     private final PdfOcrService ocrService;
     private final PdfSignService signService;
     private final PdfFontService fontService;
+    private final PdfDrawService drawService;
 
     public PdfToolsController(DocumentService documentService,
                                PdfCompressService compressService,
@@ -46,7 +49,8 @@ public class PdfToolsController {
                                PdfRedactService redactService,
                                PdfOcrService ocrService,
                                PdfSignService signService,
-                               PdfFontService fontService) {
+                               PdfFontService fontService,
+                               PdfDrawService drawService) {
         this.documentService = documentService;
         this.compressService = compressService;
         this.passwordService = passwordService;
@@ -61,6 +65,7 @@ public class PdfToolsController {
         this.ocrService = ocrService;
         this.signService = signService;
         this.fontService = fontService;
+        this.drawService = drawService;
     }
 
     // ─── Font Extraction (V2 Preview) ─────────────────────────
@@ -354,6 +359,26 @@ public class PdfToolsController {
         }
     }
 
+    @PostMapping("/redact-box")
+    public ResponseEntity<byte[]> redactPdfBox(@RequestBody RedactBoxRequestDto request) {
+        try {
+            File pdfFile = documentService.getDocumentFile(request.getDocumentId());
+            byte[] result = redactService.redactByBoxes(pdfFile, request);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=redacted.pdf")
+                    .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
+                    .body(result);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Redact box validation error: " + e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            System.err.println("Redact box failed: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     // ─── OCR ────────────────────────────────────────────────────
 
     @PostMapping("/ocr")
@@ -374,4 +399,50 @@ public class PdfToolsController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    // ─── Draw ───────────────────────────────────────────────────
+
+    @PostMapping("/draw")
+    public ResponseEntity<byte[]> drawOnPdf(@RequestBody DrawRequestDto request) {
+        try {
+            File pdfFile = documentService.getDocumentFile(request.getDocumentId());
+            byte[] result = drawService.draw(pdfFile, request);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=drawn.pdf")
+                    .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
+                    .body(result);
+        } catch (Exception e) {
+            System.err.println("Draw failed: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // ─── Insert Image ──────────────────────────────────────────
+
+    @PostMapping("/insertImage")
+    public ResponseEntity<byte[]> insertImagePdf(
+            @RequestParam("documentId") String documentId,
+            @RequestParam("image") MultipartFile image,
+            @RequestParam("page") int page,
+            @RequestParam("xPct") float xPct,
+            @RequestParam("yPct") float yPct,
+            @RequestParam("scale") float scale) {
+        try {
+            File pdfFile = documentService.getDocumentFile(documentId);
+            byte[] imageBytes = image.getBytes();
+            byte[] result = signService.insertImage(pdfFile, imageBytes, page, xPct, yPct, scale);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=with-image.pdf")
+                    .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
+                    .body(result);
+        } catch (Exception e) {
+            System.err.println("Insert Image failed: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
 }

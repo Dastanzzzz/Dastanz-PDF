@@ -145,6 +145,16 @@ export const redactPdf = async (documentId, searchText, color = '#000000') => {
   return await response.blob();
 };
 
+export const redactPdfBoxes = async (redactRequestDto) => {
+  const response = await fetch(`${API_URL}/tools/redact-box`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(redactRequestDto),
+  });
+  if (!response.ok) throw new Error('Redact boxes failed');
+  return await response.blob();
+};
+
 export const ocrPdf = async (documentId, language = 'eng') => {
   const params = new URLSearchParams();
   params.append('documentId', documentId);
@@ -172,5 +182,32 @@ export const signPdf = async (documentId, signatureFile, page, x, y, scale) => {
     body: formData,
   });
   if (!response.ok) throw new Error('Sign failed');
+  return await response.blob();
+};
+
+export const drawOnPdf = async (drawRequestDto) => {
+  const response = await fetch(`${API_URL}/tools/draw`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(drawRequestDto),
+  });
+  if (!response.ok) throw new Error('Draw failed');
+  return await response.blob();
+};
+
+export const insertImageOnPdf = async (documentId, imageFile, page, xPct, yPct, scale) => {
+  const formData = new FormData();
+  formData.append('documentId', documentId);
+  formData.append('image', imageFile);
+  formData.append('page', page);
+  formData.append('xPct', xPct);
+  formData.append('yPct', yPct);
+  formData.append('scale', scale);
+
+  const response = await fetch(`${API_URL}/tools/insertImage`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!response.ok) throw new Error('Insert Image failed');
   return await response.blob();
 };
