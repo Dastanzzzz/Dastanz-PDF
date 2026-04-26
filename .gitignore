@@ -1,5 +1,27 @@
+# OS
 .DS_Store
+Thumbs.db
+
+# Editor
 .vscode/
 .idea/
+
+# Logs
 *.log
 
+# ─── Backend ───────────────────────────────────────────────
+backend/target/
+
+# ─── Frontend ──────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+
+# ─── Desktop ───────────────────────────────────────────────
+desktop/node_modules/
+desktop/dist/
+
+# Bundled runtime resources (too large for git, rebuild locally)
+desktop/resources/backend.jar
+desktop/resources/jre/
+desktop/resources/frontend/
+desktop/resources/ocr/
